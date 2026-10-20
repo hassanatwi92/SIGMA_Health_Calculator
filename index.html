@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sigma Medical Premium Calculator</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--tx:#1b2430;--mu:#657083;--bd:#dde1e8;--ac:#0b5cad;--acbg:#e6f0fb;--hl:#f0f8f1;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14181f;--card:#1d232d;--tx:#e8ecf2;--mu:#98a3b5;--bd:#2f3745;--ac:#6fb1ff;--acbg:#1e3350;--hl:#1c2e22}}
+:root[data-theme="dark"]{--bg:#14181f;--card:#1d232d;--tx:#e8ecf2;--mu:#98a3b5;--bd:#2f3745;--ac:#6fb1ff;--acbg:#1e3350;--hl:#1c2e22}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;line-height:1.45}
+.w{max-width:760px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:4px 0 12px}
+.c{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}
+label{display:block;font-size:12px;color:var(--mu);margin-bottom:4px}
+select,input[type=number]{width:100%;padding:9px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font-size:15px;box-sizing:border-box}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.m{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:8px;margin-top:8px;align-items:end}
+.ov{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:9px 8px;border-bottom:1px solid var(--bd);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{background:var(--acbg);color:var(--ac);font-weight:600}
+td.t{font-weight:700;background:var(--hl)}
+.n{font-size:12px;color:var(--mu)}
+.er{color:#c0392b;font-size:13px}
+.ck{display:flex;gap:8px;align-items:center;font-size:14px;margin-top:10px}
+.ck input{width:auto}
+</style></head><body><div class="w">
+<h1>Sigma Medical Insurance – Premium Calculator</h1>
+<div class="c">
+<div class="g">
+<div><label>Network</label><select id="net"><option value="F">Full Network</option><option value="R">Reduced Network</option></select></div>
+<div><label>Type</label><select id="typ"><option value="J">Junior Single (18–35)</option><option value="I" selected>Individual</option><option value="Fm">Family</option></select></div>
+<div id="cntw"><label>Number of persons</label><select id="cnt"></select></div>
+</div>
+<div id="mem"></div>
+<div class="ck"><input type="checkbox" id="disc"><label for="disc" style="margin:0;color:var(--tx)">Renewal 5% discount (loss ratio &lt; 30% and all members ≤ 45)</label></div>
+<div class="ck"><input type="checkbox" id="ext"><label for="ext" style="margin:0;color:var(--tx)">Add compulsory covers + policy cost (optional extras)</label></div>
+</div>
+<div id="err" class="er"></div>
+<div class="c ov" id="out"></div>
+<div class="c n" id="brk"></div>
+<div class="n">Prices in fresh USD. Totals = sum of each person's premium by age (extras only if ticked). Subject to underwriting.</div>
+</div>
+<script>
+// [A,B,K,AMB100,AMB85] per age bracket; Reduced has null for AMB100
+var B=[17,24,30,35,40,45,50,55,60,65];
+var LB=["14D-17Y","18-24","25-30","31-35","36-40","41-45","46-50","51-55","56-60","61-65"];
+var D={F:{J:[1097,861,824],
+I:[[0],[845,620,599,425,263],[1239,877,835,520,320],[1292,940,898,530,331],[1470,1055,1008,609,368],[1533,1108,1055,609,368],[1885,1418,1355,725,478],[2221,1722,1607,803,520],[3617,2573,2373,914,562],[4940,3439,3003,1008,646]],
+2:[[593,467,446,226,147],[840,578,557,425,263],[1213,819,782,520,320],[1265,935,893,530,331],[1423,977,929,609,368],[1481,1055,1003,609,368],[1864,1381,1313,725,478],[2205,1586,1523,803,520],[3518,2494,2263,914,562],[4599,3407,2830,1008,646]],
+3:[[536,436,415,200,131],[756,557,536,389,242],[1118,814,777,473,294],[1166,845,809,483,305],[1323,971,919,541,336],[1376,1008,961,541,352],[1691,1255,1197,662,431],[2048,1491,1423,719,473],[3297,2357,2163,824,515],[4268,3140,2683,924,588]],
+4:[[525,431,410,200,131],[735,551,530,389,242],[1082,803,761,473,294],[1124,840,793,483,305],[1286,956,914,541,336],[1339,998,950,541,352],[1649,1239,1155,662,431],[2027,1470,1402,719,473],[3239,2294,2147,824,515],[4242,3124,2583,924,588]]},
+R:{J:[840,646,562],
+I:[[0],[656,452,362,null,210],[956,641,473,null,257],[992,730,530,null,263],[1139,782,562,null,294],[1187,856,614,null,294],[1486,1040,756,null,368],[1838,1276,840,null,394],[2636,1906,1349,null,410],[3581,2615,1486,null,488]],
+2:[[473,362,273,null,110],[630,436,357,null,210],[950,614,467,null,257],[987,709,515,null,263],[1108,751,551,null,294],[1166,819,599,null,294],[1486,1034,746,null,368],[1806,1265,835,null,394],[2588,1901,1297,null,410],[3575,2588,1465,null,488]],
+3:[[431,326,252,null,110],[588,420,347,null,210],[845,593,462,null,257],[877,646,515,null,263],[1024,735,536,null,294],[1066,788,583,null,294],[1334,961,709,null,368],[1685,1218,830,null,394],[2405,1780,1208,null,410],[3528,2525,1360,null,488]],
+4:[[415,320,247,null,110],[567,410,331,null,210],[830,578,452,null,257],[861,630,478,null,263],[1008,714,515,null,294],[1050,767,562,null,294],[1307,935,693,null,368],[1659,1187,809,null,394],[2389,1775,1192,null,410],[3502,2515,1355,null,488]]}};
+var $=function(i){return document.getElementById(i)};
+var ages=[30,28,5,3,2,1,1,1],roles=[];
+function bi(a){for(var i=0;i<B.length;i++)if(a<=B[i])return i;return -1}
+function fill(){var c=$('cnt');c.innerHTML='';for(var n=2;n<=8;n++){var o=document.createElement('option');o.value=n;o.textContent=n+(n==4?' (4 = same rate as 4+)':'');c.appendChild(o)}}
+function members(){var t=$('typ').value,n=t=='Fm'?+$('cnt').value:1;$('cntw').style.display=t=='Fm'?'':'none';
+var h='';for(var i=0;i<n;i++){
+h+='<div class="m"><div><label>Person '+(i+1)+' – age (years)</label><input type="number" min="0" max="65" data-a="'+i+'" value="'+ages[i]+'"></div><div></div></div>'}
+$('mem').innerHTML=h;
+[].forEach.call($('mem').querySelectorAll('[data-a]'),function(e){e.oninput=function(){ages[+e.dataset.a]=e.value===''?NaN:+e.value;calc()}});
+[].forEach.call($('mem').querySelectorAll('[data-r]'),function(e){e.onchange=function(){roles[+e.dataset.r]=e.value;calc()}});}
+function f(x){return '$'+Math.round(x).toLocaleString('en-US')}
+function calc(){var net=$('net').value,t=$('typ').value,n=t=='Fm'?+$('cnt').value:1,err='';
+var key=t=='J'?'J':t=='I'?'I':(n>=4?4:n);var tab=D[net][key];var rows=[0,0,0],am85=0,am100=0,comp=0,br=[],allyoung=true;
+var lo=t=='Fm'?0:18,hi=t=='J'?35:65;
+for(var i=0;i<n;i++){var a=ages[i];if(isNaN(a)||a<lo||a>hi){err='Member '+(i+1)+': age must be '+lo+'–'+hi+' for this plan.';break}
+if(a>45)allyoung=false;
+var r,idx=0;if(t=='J'){r=tab}else{idx=bi(a);r=tab[idx]}
+if(!r||r.length<3){err='No rate for this age.';break}
+for(var c=0;c<3;c++)rows[c]+=r[c];
+if(t!='J'){am100+=(r[3]||0);am85+=r[4]}
+var cv=i==0?40:(a>=15&&a<=50?5:0);
+comp+=cv;br.push('Person '+(i+1)+', age '+a+(t=='J'?'':' ('+LB[idx]+')')+' – A '+f(r[0])+' / B '+f(r[1])+' / K '+f(r[2])+(t=='J'?'':' · AMB 85%: '+f(r[4])));}
+$('err').textContent=err;if(err){$('out').innerHTML='';$('brk').innerHTML='';return}
+var ex=$('ext').checked,fee=ex?(t=='Fm'?25:10):0,d=$('disc').checked&&allyoung?0.95:1;if(!ex)comp=0;
+$('disc').parentNode.style.opacity=1;
+var names=["First class (A)","Second class (B)","Semi-private (K)"],h='<table><tr><th>Class</th>';
+var cols=[];if(t=='J'){cols=[['Incl. AMB 85%',0]]}else{cols=[['Inpatient only',0],['+ AMB 85%',am85]];if(net=='F')cols.push(['+ AMB 100%',am100])}
+cols.forEach(function(c){h+='<th>'+c[0]+'</th>'});h+='</tr>';
+for(var c=0;c<3;c++){h+='<tr><td>'+names[c]+'</td>';cols.forEach(function(k){h+='<td class="t">'+f((rows[c]+k[1])*d+comp+fee)+'</td>'});h+='</tr>'}
+h+='</table>';
+if($('disc').checked&&!allyoung)h+='<div class="n" style="margin-top:8px">5% discount not applied: someone is older than 45.</div>';
+$('out').innerHTML=h;
+$('brk').innerHTML='<b>Breakdown</b><br>'+br.join('<br>')+(ex?'<br>Compulsory covers: '+f(comp)+' (Person 1 counted as policyholder, $5 for others aged 15–50) · Policy cost: '+f(fee):'<br>Extras (compulsory covers + policy cost) are not included.')+(d<1?' · 5% renewal discount on premium applied':'')+(t=='J'?'<br>Junior Single price already includes AMB 85%.':'');}
+fill();$('cnt').value=2;
+['net','typ','cnt','disc','ext'].forEach(function(i){$(i).onchange=function(){members();calc()}});
+members();calc();
+</script></body></html>
