@@ -10,11 +10,12 @@ html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;line-height:1.45}
 .w{max-width:760px;margin:0 auto;padding:16px}
 h1{font-size:20px;margin:4px 0 12px}
+h2{font-size:17px;margin:20px 0 8px;color:var(--ac)}
 .c{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}
 label{display:block;font-size:12px;color:var(--mu);margin-bottom:4px}
 select,input[type=number]{width:100%;padding:9px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font-size:15px;box-sizing:border-box}
 .g{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
-.m{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:8px;margin-top:8px;align-items:end}
+.m{display:inline-block;width:110px;margin:8px 8px 0 0}
 .ov{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:14px}
 th,td{padding:9px 8px;border-bottom:1px solid var(--bd);text-align:right;white-space:nowrap}
@@ -22,28 +23,30 @@ th:first-child,td:first-child{text-align:left}
 th{background:var(--acbg);color:var(--ac);font-weight:600}
 td.t{font-weight:700;background:var(--hl)}
 .n{font-size:12px;color:var(--mu)}
-.er{color:#c0392b;font-size:13px}
+.er{color:#c0392b;font-size:13px;margin-bottom:8px}
 .ck{display:flex;gap:8px;align-items:center;font-size:14px;margin-top:10px}
 .ck input{width:auto}
 </style></head><body><div class="w">
-<h1>Sigma Medical Insurance – Premium Calculator</h1>
-<div class="c">
-<div class="g">
+<h1>Medical Insurance – Premium Calculator</h1>
+<div class="c"><div class="g"><div><label>Number of persons</label><select id="cnt"></select></div></div><div id="mem"></div></div>
+
+<h2>Plan 1</h2>
+<div class="c"><div class="g">
 <div><label>Network</label><select id="net"><option value="F">Full Network</option><option value="R">Reduced Network</option></select></div>
-<div><label>Type</label><select id="typ"><option value="J">Junior Single (18–35)</option><option value="I" selected>Individual</option><option value="Fm">Family</option></select></div>
-<div id="cntw"><label>Number of persons</label><select id="cnt"></select></div>
-</div>
-<div id="mem"></div>
+<div id="jw"><label>Type (single person)</label><select id="jt"><option value="I">Individual</option><option value="J">Junior Single (18–35)</option></select></div></div>
 <div class="ck"><input type="checkbox" id="disc"><label for="disc" style="margin:0;color:var(--tx)">Renewal 5% discount (loss ratio &lt; 30% and all members ≤ 45)</label></div>
-<div class="ck"><input type="checkbox" id="ext"><label for="ext" style="margin:0;color:var(--tx)">Add compulsory covers + policy cost (optional extras)</label></div>
-</div>
-<div id="err" class="er"></div>
-<div class="c ov" id="out"></div>
-<div class="c n" id="brk"></div>
-<div class="n">Prices in fresh USD. Totals = sum of each person's premium by age (extras only if ticked). Subject to underwriting.</div>
+<div class="ck"><input type="checkbox" id="ext"><label for="ext" style="margin:0;color:var(--tx)">Add compulsory covers + policy cost (optional extras)</label></div></div>
+<div id="e1" class="er"></div><div class="c ov" id="o1"></div><div class="c n" id="b1"></div>
+
+<h2>Sigma Care Plus A</h2>
+<div id="e2" class="er"></div><div class="c ov" id="o2"></div>
+
+<h2>Sigma Care Plus K</h2>
+<div class="c"><div class="ck" style="margin:0"><input type="checkbox" id="extK"><label for="extK" style="margin:0;color:var(--tx)">Add policy fee (USD 20 yearly)</label></div></div>
+<div id="e3" class="er"></div><div class="c ov" id="o3"></div>
+<div class="n">Prices in USD. Subject to underwriting and each insurer's terms.</div>
 </div>
 <script>
-// [A,B,K,AMB100,AMB85] per age bracket; Reduced has null for AMB100
 var B=[17,24,30,35,40,45,50,55,60,65];
 var LB=["14D-17Y","18-24","25-30","31-35","36-40","41-45","46-50","51-55","56-60","61-65"];
 var D={F:{J:[1097,861,824],
@@ -56,40 +59,60 @@ I:[[0],[656,452,362,null,210],[956,641,473,null,257],[992,730,530,null,263],[113
 2:[[473,362,273,null,110],[630,436,357,null,210],[950,614,467,null,257],[987,709,515,null,263],[1108,751,551,null,294],[1166,819,599,null,294],[1486,1034,746,null,368],[1806,1265,835,null,394],[2588,1901,1297,null,410],[3575,2588,1465,null,488]],
 3:[[431,326,252,null,110],[588,420,347,null,210],[845,593,462,null,257],[877,646,515,null,263],[1024,735,536,null,294],[1066,788,583,null,294],[1334,961,709,null,368],[1685,1218,830,null,394],[2405,1780,1208,null,410],[3528,2525,1360,null,488]],
 4:[[415,320,247,null,110],[567,410,331,null,210],[830,578,452,null,257],[861,630,478,null,263],[1008,714,515,null,294],[1050,767,562,null,294],[1307,935,693,null,368],[1659,1187,809,null,394],[2389,1775,1192,null,410],[3502,2515,1355,null,488]]}};
+// Care Plus A / K (brackets 0-17,18-24,25-35,36-45,46-50,51-55,56-60,61-65,66-70,71-75,76-85)
+var AE=[17,24,35,45,50,55,60,65,70,75,85];
+var AL=["0-17","18-24","25-35","36-45","46-50","51-55","56-60","61-65","66-70","71-75","76-85"];
+var A={
+"In only":[[482],[1058,1867,2390,2869,3329,3663,3975,4294],[1197,2142,2678,3161,3614,3940,4256,4576],[1307,2294,2800,3248,3661,3973,4251,4528],[1656,2940,3500,3990,4429,4762,5072,5378],[1856,3300,3828,4288,4687,4992,5266,5530],[2675,4773,5393,5880,6334,6683,7018,7334],[3493,6296,6926,7411,7856,8249,8621,8965],[4794],[5789],[6506]],
+"In+Out 85%":[[597],[1258,2179,2609,3030,3455,3786,4106,4436],[1403,2434,2853,3291,3708,4029,4357,4679],[1535,2663,3093,3515,3935,4253,4574,4901],[1900,3312,3734,4157,4568,4885,5213,5528],[2239,3911,4364,4803,5253,5605,5945,6288],[3184,5573,6055,6557,7038,7412,7791,8175],[4107,7181,7686,8208,8704,9101,9494,9900],[5549],[6732],[7817]],
+"In+Out 100%":[[681],[1505,2609,3094,3579,3993,4310,4625,4944],[1687,2936,3430,3954,4381,4715,5056,5387],[1836,3206,3722,4238,4681,5026,5365,5714],[2258,3835,4425,5014,5535,5941,6363,6782],[2575,4350,4975,5617,6160,6614,7066,7506],[3617,6191,6921,7640,8291,8818,9360,9894],[4680,8046,8874,9692,10413,11030,11645,12269],[6287],[7576],[8773]]};
+var K=[[171,112,283],[354,246,600],[467,278,744],[535,348,882],[677,349,1025],[721,389,1109],[1078,474,1551],[1418,546,1964],[1713,549,2262],[2718,663,3380],[3624,663,4287]];
 var $=function(i){return document.getElementById(i)};
-var ages=[30,28,5,3,2,1,1,1],roles=[];
-function bi(a){for(var i=0;i<B.length;i++)if(a<=B[i])return i;return -1}
-function fill(){var c=$('cnt');c.innerHTML='';for(var n=2;n<=8;n++){var o=document.createElement('option');o.value=n;o.textContent=n+(n==4?' (4 = same rate as 4+)':'');c.appendChild(o)}}
-function members(){var t=$('typ').value,n=t=='Fm'?+$('cnt').value:1;$('cntw').style.display=t=='Fm'?'':'none';
-var h='';for(var i=0;i<n;i++){
-h+='<div class="m"><div><label>Person '+(i+1)+' – age (years)</label><input type="number" min="0" max="65" data-a="'+i+'" value="'+ages[i]+'"></div><div></div></div>'}
-$('mem').innerHTML=h;
-[].forEach.call($('mem').querySelectorAll('[data-a]'),function(e){e.oninput=function(){ages[+e.dataset.a]=e.value===''?NaN:+e.value;calc()}});
-[].forEach.call($('mem').querySelectorAll('[data-r]'),function(e){e.onchange=function(){roles[+e.dataset.r]=e.value;calc()}});}
+var ages=[36,18,5,3,2,1,1,1];
+function bi(a,E){for(var i=0;i<E.length;i++)if(a<=E[i])return i;return -1}
 function f(x){return '$'+Math.round(x).toLocaleString('en-US')}
-function calc(){var net=$('net').value,t=$('typ').value,n=t=='Fm'?+$('cnt').value:1,err='';
-var key=t=='J'?'J':t=='I'?'I':(n>=4?4:n);var tab=D[net][key];var rows=[0,0,0],am85=0,am100=0,comp=0,br=[],allyoung=true;
+function fill(){var c=$('cnt');for(var n=1;n<=8;n++){var o=document.createElement('option');o.value=n;o.textContent=n;c.appendChild(o)}c.value=2}
+function members(){var n=+$('cnt').value,h='';$('jw').style.display=n==1?'':'none';
+for(var i=0;i<n;i++)h+='<div class="m"><label>Person '+(i+1)+' – age</label><input type="number" min="0" max="85" data-a="'+i+'" value="'+ages[i]+'"></div>';
+$('mem').innerHTML=h;
+[].forEach.call($('mem').querySelectorAll('[data-a]'),function(e){e.oninput=function(){ages[+e.dataset.a]=e.value===''?NaN:+e.value;calc()}});}
+function plan1(n,as){var net=$('net').value,t=n==1?$('jt').value:'Fm',err='';
+var key=t=='J'?'J':t=='I'?'I':(n>=4?4:n);var tab=D[net][key];var rows=[0,0,0],am85=0,am100=0,comp=0,br=[],young=true;
 var lo=t=='Fm'?0:18,hi=t=='J'?35:65;
-for(var i=0;i<n;i++){var a=ages[i];if(isNaN(a)||a<lo||a>hi){err='Member '+(i+1)+': age must be '+lo+'–'+hi+' for this plan.';break}
-if(a>45)allyoung=false;
-var r,idx=0;if(t=='J'){r=tab}else{idx=bi(a);r=tab[idx]}
-if(!r||r.length<3){err='No rate for this age.';break}
+for(var i=0;i<n;i++){var a=as[i];if(a<lo||a>hi)return{e:'Plan 1: age must be '+lo+'–'+hi+' for this plan.'};
+if(a>45)young=false;var r,idx=0;if(t=='J')r=tab;else{idx=bi(a,B);r=tab[idx]}
 for(var c=0;c<3;c++)rows[c]+=r[c];
 if(t!='J'){am100+=(r[3]||0);am85+=r[4]}
-var cv=i==0?40:(a>=15&&a<=50?5:0);
-comp+=cv;br.push('Person '+(i+1)+', age '+a+(t=='J'?'':' ('+LB[idx]+')')+' – A '+f(r[0])+' / B '+f(r[1])+' / K '+f(r[2])+(t=='J'?'':' · AMB 85%: '+f(r[4])));}
-$('err').textContent=err;if(err){$('out').innerHTML='';$('brk').innerHTML='';return}
-var ex=$('ext').checked,fee=ex?(t=='Fm'?25:10):0,d=$('disc').checked&&allyoung?0.95:1;if(!ex)comp=0;
-$('disc').parentNode.style.opacity=1;
-var names=["First class (A)","Second class (B)","Semi-private (K)"],h='<table><tr><th>Class</th>';
-var cols=[];if(t=='J'){cols=[['Incl. AMB 85%',0]]}else{cols=[['Inpatient only',0],['+ AMB 85%',am85]];if(net=='F')cols.push(['+ AMB 100%',am100])}
+var cv=i==0?40:(a>=15&&a<=50?5:0);comp+=cv;
+br.push('Person '+(i+1)+', age '+a+(t=='J'?'':' ('+LB[idx]+')')+' – A '+f(r[0])+' / B '+f(r[1])+' / K '+f(r[2])+(t=='J'?'':' · AMB 85%: '+f(r[4])));}
+var ex=$('ext').checked,fee=ex?(n>1?25:10):0,d=$('disc').checked&&young?0.95:1;if(!ex)comp=0;
+var names=["First class (A)","Second class (B)","Semi-private (K)"],h='<table><tr><th>Class</th>',cols;
+if(t=='J')cols=[['Incl. AMB 85%',0]];else{cols=[['Inpatient only',0],['+ AMB 85%',am85]];if(net=='F')cols.push(['+ AMB 100%',am100])}
 cols.forEach(function(c){h+='<th>'+c[0]+'</th>'});h+='</tr>';
 for(var c=0;c<3;c++){h+='<tr><td>'+names[c]+'</td>';cols.forEach(function(k){h+='<td class="t">'+f((rows[c]+k[1])*d+comp+fee)+'</td>'});h+='</tr>'}
 h+='</table>';
-if($('disc').checked&&!allyoung)h+='<div class="n" style="margin-top:8px">5% discount not applied: someone is older than 45.</div>';
-$('out').innerHTML=h;
-$('brk').innerHTML='<b>Breakdown</b><br>'+br.join('<br>')+(ex?'<br>Compulsory covers: '+f(comp)+' (Person 1 counted as policyholder, $5 for others aged 15–50) · Policy cost: '+f(fee):'<br>Extras (compulsory covers + policy cost) are not included.')+(d<1?' · 5% renewal discount on premium applied':'')+(t=='J'?'<br>Junior Single price already includes AMB 85%.':'');}
-fill();$('cnt').value=2;
-['net','typ','cnt','disc','ext'].forEach(function(i){$(i).onchange=function(){members();calc()}});
+if($('disc').checked&&!young)h+='<div class="n" style="margin-top:8px">5% discount not applied: someone is older than 45.</div>';
+var b='<b>Breakdown</b><br>'+br.join('<br>')+(ex?'<br>Compulsory covers: '+f(comp)+' (Person 1 counted as policyholder, $5 for others aged 15–50) · Policy cost: '+f(fee):'<br>Extras (compulsory covers + policy cost) are not included.')+(d<1?' · 5% renewal discount applied':'')+(t=='J'?'<br>Junior Single price already includes AMB 85%.':'');
+return{h:h,b:b};}
+function planA(n,as){var old=Math.max.apply(null,as),i=bi(old,AE),idx=n-1;
+var h='<table><tr><th>Coverage</th><th>'+(n==1?'Single':n==2?'Couple':'Couple+'+(n-2))+'</th></tr>';
+for(var k in A){var v=A[k][i][idx];if(v===undefined)return{e:'Care Plus A: no rate for '+(n==1?'a single person':'a family')+' with the oldest member aged '+old+' (family rates are for 18–65).'};
+h+='<tr><td>'+k+'</td><td class="t">'+f(v)+'</td></tr>'}
+h+='</table><div class="n" style="margin-top:8px">'+(n==1?'Age bracket '+AL[i]:'Family rate by the oldest member\'s bracket ('+AL[i]+'); 2 adults assumed + '+Math.max(0,n-2)+' child(ren)')+'.</div>';
+return{h:h};}
+function planK(n,as){var s=[0,0,0],h='<table><tr><th>Person</th><th>IN</th><th>OUT</th><th>IN+OUT</th></tr>';
+for(var i=0;i<n;i++){var r=K[bi(as[i],AE)];for(var c=0;c<3;c++)s[c]+=r[c];
+h+='<tr><td>Person '+(i+1)+' ('+as[i]+', '+AL[bi(as[i],AE)]+')</td><td>'+f(r[0])+'</td><td>'+f(r[1])+'</td><td>'+f(r[2])+'</td></tr>'}
+var fee=$('extK').checked?20:0;
+h+='<tr><td><b>Total'+(fee?' + $20 fee':'')+'</b></td><td class="t">'+f(s[0]+fee)+'</td><td class="t">'+f(s[1]+fee)+'</td><td class="t">'+f(s[2]+fee)+'</td></tr></table>';
+if(Math.max.apply(null,as)>65)h+='<div class="n" style="margin-top:8px">Rates above 65 are for renewals only.</div>';
+return{h:h};}
+function calc(){var n=+$('cnt').value,as=ages.slice(0,n),bad=as.some(function(a){return isNaN(a)||a<0||a>85});
+var ids=[['e1','o1','b1'],['e2','o2'],['e3','o3']];
+if(bad){ids.forEach(function(x){$(x[0]).textContent='Enter valid ages (0–85).';$(x[1]).innerHTML='';if(x[2])$(x[2]).innerHTML=''});return}
+[plan1(n,as),planA(n,as),planK(n,as)].forEach(function(r,j){var x=ids[j];$(x[0]).textContent=r.e||'';$(x[1]).style.display=r.e?'none':'';$(x[1]).innerHTML=r.h||'';if(x[2]){$(x[2]).style.display=r.e?'none':'';$(x[2]).innerHTML=r.b||''}})}
+fill();
+['net','jt','disc','ext','extK'].forEach(function(i){$(i).onchange=calc});
+$('cnt').onchange=function(){members();calc()};
 members();calc();
 </script></body></html>
